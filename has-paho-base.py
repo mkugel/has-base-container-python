@@ -5,18 +5,19 @@ import os
 
 # micro service identifiers
 
-service_id = 1
-service_tier = 1
-service_group = 1
-service_version = 1
-security_level = 1
+service_id = os.getenv('SERVICE_ID', 1)
+service_tier = os.getenv('SERVICE_TIER', 1)
+service_group = os.getenv('SERVICE_GROUP', 1)
+service_version = os.getenv('SERVICE_VERSION', 1)
+security_level = os.getenv('SECURITY_LEVEL', 1)
+service_order = os.getenv('SERVICE_ORDER', 1)
 
 # micro service labels
 
-service_type = "safety"
-service_name = "smoke-alarm"
-service_tab = "default"
-service_zone = "core-1"
+service_type = "climate"
+service_name = "heating"
+service_zone = "livingroom"
+service_tag = "radiator"
 
 # micro service environment
 
@@ -24,7 +25,7 @@ sensor_service_array = ["sensor-1" , "sensor-2" , "sensor-3" , "sensor-4"]
 transform_service_array = ["dt-1" , "dt-2" , "dt-3" , "dt-4"]
 gateway_service_array = ["gateway-1" , "gateway-2"]
 data_service_array = ["dp-1" , "dp-2" , "dp-3"]
-dashboard_service = ["dashboard-1" , "dashboard-2"]
+dashboard_service_array = ["dashboard-1" , "dashboard-2"]
 
 # message broker
 
@@ -37,21 +38,29 @@ def publish_value(message_body):
 
 def power_off():
     print("Powering off")
-    publish.single("information/service/log", "Powering off " + service-name, hostname=broker_main)   
+    publish.single("information/service/log", "Powering off " + service_name, hostname=broker_main)   
 
 def power_on():
     print("Powering on")
-    publish.single("information/service/log", "Powering on " + service-name, hostname=broker_main)
+    publish.single("information/service/log", "Powering on " + service_name, hostname=broker_main)
 
 def health_beat():
     print("Health Beat")
-    publish.single("information/service/log", "Thump " + service-name, hostname=broker_main)
+    publish.single("information/service/log", "Thump " + service_name, hostname=broker_main)
 
 # Custom function definitions
 
 def some_special_function():
     print("Doing something special")
-    publish.single("information/service/log", "Special Message from " + service-name, hostname=broker_main)
+    publish.single("information/service/log", "Special Message from " + service_name, hostname=broker_main)
+
+def increase_temperature():
+    print("Increasing Temperaure")
+    publish.single("information/service/log", "Increasing temperature of " + service_name, hostname=broker_main)
+
+def decrease_temperature():
+    print("Decreasing Temperaure")
+    publish.single("information/service/log", "Decreasing temperature of " + service_name, hostname=broker_main)
 
 # Callbacks
 
@@ -89,6 +98,20 @@ def on_message(client, userdata, msg):
     msgs = [{'topic':"information/service/log", 'payload':str(msg.payload)},
     ("information/system/log", str(msg.payload), 0, False)]
     publish.multiple(msgs, hostname=broker_main)
+
+    # messafe filtering
+
+    if (msg.topic=="control/service/" + service_type + "/" + service_name + "/power"):
+        if(msg.payload=="off"):
+            power_off()
+        elif(msg.payload=="on"):
+            power_on()
+    
+    if (msg.topic=="control/service/" + service_type + "/" + service_name + "/tuning"):
+        if(msg.payload=="increase"):
+            increase_temperature()
+        elif(msg.payload=="decrease"):
+            decrease_temperature()
 
 # Client Hook into Broker and Callbacks
 
